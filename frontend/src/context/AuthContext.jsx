@@ -1,24 +1,40 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  // mock auth (replace later with backend)
   const [user, setUser] = useState(null);
-  // example user:
-  // { role: "ngo" } or { role: "donor" }
+  const [loading, setLoading] = useState(true);
 
-  const loginAsDonor = () => setUser({ role: "donor" });
-  const loginAsNGO = () => setUser({ role: "ngo" });
-  const logout = () => setUser(null);
+  // Restore session on refresh
+  useEffect(() => {
+    const stored = localStorage.getItem("authUser");
+    if (stored) {
+      setUser(JSON.parse(stored));
+    }
+    setLoading(false);
+  }, []);
+
+  // EXISTING login logic → just persist
+  const login = (userData) => {
+    setUser(userData);
+    localStorage.setItem("authUser", JSON.stringify(userData));
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("authUser");
+  };
 
   return (
-    <AuthContext.Provider
-      value={{ user, loginAsDonor, loginAsNGO, logout }}
-    >
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  return ctx;
+}

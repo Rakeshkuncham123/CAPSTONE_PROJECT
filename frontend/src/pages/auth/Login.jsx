@@ -4,6 +4,10 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, Mail, Lock, User, Building2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+
+
 
 /* ---------------- VALIDATION SCHEMAS ---------------- */
 
@@ -34,6 +38,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+const { login } = useAuth();
+
 
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
@@ -47,13 +54,32 @@ export default function Login() {
 
   /* ---------------- SUBMIT HANDLERS ---------------- */
 
-  const handleLogin = async () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      alert("Logged in (mock)");
-    }, 1500);
-  };
+  const handleLogin = async (data) => {
+  setLoading(true);
+
+  setTimeout(() => {
+    // 🔴 MOCK AUTH RESPONSE (MATCHES BACKEND FORMAT)
+    const mockUser = {
+      id: 1,
+      name: "Demo Donor",
+      email: data.email,
+      role: data.email.includes("ngo") ? "ngo" : "donor", // demo logic
+    };
+
+    // ✅ STORE USER IN CONTEXT + LOCALSTORAGE
+    login(mockUser);
+
+    setLoading(false);
+
+    // ✅ ROLE-BASED REDIRECT
+    if (mockUser.role === "donor") {
+      navigate("/donor/dashboard", { replace: true });
+    } else if (mockUser.role === "ngo") {
+      navigate("/ngo/dashboard", { replace: true });
+    }
+  }, 1200);
+};
+
 
   const handleRegister = async () => {
     setLoading(true);

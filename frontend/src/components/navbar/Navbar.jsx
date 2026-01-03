@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Menu, Building2, HandHeart } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import NavItem from "./NavItem";
 import RoleTab from "./RoleTab";
@@ -9,9 +10,42 @@ import UserMenu from "./UserMenu";
 import MobileMenu from "./MobileMenu";
 import { useAuth } from "../../context/AuthContext";
 
+const scrollToSection = (id) => {
+  const section = document.getElementById(id);
+  if (section) {
+    section.scrollIntoView({ behavior: "smooth" });
+  }
+};
+
+
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
+const location = useLocation();
+
+const goHome = () => {
+  if (location.pathname === "/") {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } else {
+    navigate("/");
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 100);
+  }
+};
+
+const scrollToSection = (id) => {
+  if (location.pathname !== "/") {
+    navigate("/");
+    setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    }, 150);
+  } else {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  }
+};
+
 
   return (
     <>
@@ -32,27 +66,61 @@ export default function Navbar() {
 
           {/* CENTER: Nav Links */}
           <nav className="hidden lg:flex items-center gap-8">
-            <NavItem to="/" label="Home" />
-            <NavItem to="/how" label="How It Works" />
-            <NavItem to="/features" label="Features" />
-            <NavItem to="/impact" label="Impact" />
-            <NavItem to="/contact" label="Contact" />
+          <button
+              onClick={goHome}
+              className="text-gray-300 hover:text-emerald-400 transition font-medium"
+            >
+              Home
+            </button>
+
+          <button
+            onClick={() => scrollToSection("how")}
+            className="text-gray-300 hover:text-emerald-400 transition"
+          >
+              How It Works
+          </button>
+
+          <button
+              onClick={() => scrollToSection("features")}
+              className="text-gray-300 hover:text-emerald-400 transition"
+          >
+              Features
+          </button>
+
+          <button
+            onClick={() => scrollToSection("impact")}
+            className="text-gray-300 hover:text-emerald-400 transition"
+          >
+            Impact
+          </button>
+
+            <button
+              onClick={() => scrollToSection("contact")}
+              className="text-gray-300 hover:text-emerald-400 transition"
+            >
+              Contact
+            </button>
           </nav>
+
 
           {/* ROLE ACCESS */}
           <div className="hidden lg:flex items-center gap-3">
             <RoleTab
-              to="/ngo"
-              label="NGO Portal"
-              icon={<Building2 size={16} />}
-              active={user?.role === "ngo"}
-            />
+            //to="/ngo/NGODashboard"
+            to="/ngo/dashboard"
+            label="NGO Portal"
+            icon={<Building2 size={16} />}
+            active={user?.role === "ngo"}
+          />
+
             <RoleTab
-              to="/donor"
+              //to="/donor/DonorDashboard"
+              to="/donor/dashboard"
               label="Donor Portal"
               icon={<HandHeart size={16} />}
               active={user?.role === "donor"}
             />
+
           </div>
 
           {/* RIGHT: AUTH */}
