@@ -19,28 +19,13 @@ import {
 } from "recharts";
 import { useAuth } from "../../context/AuthContext";
 
-/* ---------------- MOCK DATA ---------------- */
+/* ---------------- STATIC UI DATA (CAN BE API LATER) ---------------- */
 
 const statsData = [
   { label: "Total Donations", value: 28 },
   { label: "Meals Saved", value: 340 },
   { label: "Active Requests", value: 2 },
   { label: "Impact Score", value: 92 },
-];
-
-const donationList = [
-  {
-    id: 1,
-    food: "Rice & Curry",
-    status: "Accepted",
-    time: "2 hours ago",
-  },
-  {
-    id: 2,
-    food: "Bread Packets",
-    status: "Delivered",
-    time: "Yesterday",
-  },
 ];
 
 const chartData = [
@@ -59,7 +44,6 @@ export default function DonorDashboard() {
     "NGO accepted your donation",
   ]);
 
-  /* ---- Real-time notification simulation ---- */
   useEffect(() => {
     const timer = setTimeout(() => {
       setNotifications((prev) => [
@@ -84,7 +68,6 @@ export default function DonorDashboard() {
           </p>
         </div>
 
-        {/* Notifications */}
         <div className="relative">
           <Bell className="cursor-pointer" />
           {notifications.length > 0 && (
@@ -111,7 +94,7 @@ export default function DonorDashboard() {
         ))}
       </section>
 
-      {/* ---------------- DONATE FOOD ---------------- */}
+      {/* ---------------- DONATE FOOD BUTTON ---------------- */}
       <motion.button
         whileTap={{ scale: 0.95 }}
         onClick={() => setShowDonate(true)}
@@ -119,25 +102,6 @@ export default function DonorDashboard() {
       >
         <Plus /> Donate Food
       </motion.button>
-
-      {/* ---------------- MY DONATIONS ---------------- */}
-      <section className="mb-12">
-        <h2 className="text-xl font-semibold mb-4">My Donations</h2>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          {donationList.map((donation) => (
-            <motion.div
-              key={donation.id}
-              whileHover={{ y: -4 }}
-              className="bg-white/5 border border-white/10 rounded-xl p-4"
-            >
-              <h3 className="font-semibold">{donation.food}</h3>
-              <p className="text-sm text-gray-400">{donation.time}</p>
-              <StatusBadge status={donation.status} />
-            </motion.div>
-          ))}
-        </div>
-      </section>
 
       {/* ---------------- IMPACT GRAPH ---------------- */}
       <section className="bg-white/5 border border-white/10 rounded-xl p-6 mb-12">
@@ -162,7 +126,7 @@ export default function DonorDashboard() {
         </div>
       </section>
 
-      {/* ---------------- PROFILE & SETTINGS ---------------- */}
+      {/* ---------------- PROFILE ---------------- */}
       <section className="bg-white/5 border border-white/10 rounded-xl p-6 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <User />
@@ -190,37 +154,49 @@ export default function DonorDashboard() {
   );
 }
 
-/* ---------------- STATUS BADGE ---------------- */
-
-function StatusBadge({ status }) {
-  const map = {
-    Pending: {
-      icon: <Clock size={14} />,
-      style: "bg-yellow-400/20 text-yellow-300",
-    },
-    Accepted: {
-      icon: <CheckCircle size={14} />,
-      style: "bg-blue-400/20 text-blue-300",
-    },
-    Delivered: {
-      icon: <Truck size={14} />,
-      style: "bg-emerald-400/20 text-emerald-300",
-    },
-  };
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-full text-xs ${map[status].style}`}
-    >
-      {map[status].icon}
-      {status}
-    </span>
-  );
-}
-
-/* ---------------- DONATE MODAL ---------------- */
+/* ---------------- DONATE MODAL (BACKEND CONNECTED) ---------------- */
 
 function DonateModal({ onClose }) {
+  const [foodName, setFoodName] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [pickupLocation, setPickupLocation] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        "http://localhost:5000/api/donations/create",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            food_name: foodName,
+            quantity,
+            pickup_location: pickupLocation,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to create donation");
+      }
+
+      alert("Donation created successfully!");
+      onClose();
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -240,32 +216,35 @@ function DonateModal({ onClose }) {
 
         <input
           placeholder="Food Type & Category"
+          value={foodName}
+          onChange={(e) => setFoodName(e.target.value)}
           className="w-full mb-3 px-4 py-2 rounded bg-black/40 border border-white/10"
         />
+
         <input
           placeholder="Quantity"
+          value={quantity}
+          onChange={(e) => setQuantity(e.target.value)}
           className="w-full mb-3 px-4 py-2 rounded bg-black/40 border border-white/10"
         />
-        <input
-          type="datetime-local"
-          className="w-full mb-3 px-4 py-2 rounded bg-black/40 border border-white/10"
-        />
+
         <input
           placeholder="Pickup Location"
+          value={pickupLocation}
+          onChange={(e) => setPickupLocation(e.target.value)}
           className="w-full mb-3 px-4 py-2 rounded bg-black/40 border border-white/10"
         />
 
         <div className="flex justify-between mt-4">
-          <button
-            onClick={onClose}
-            className="text-gray-400"
-          >
+          <button onClick={onClose} className="text-gray-400">
             Cancel
           </button>
           <button
-            className="bg-emerald-500 px-4 py-2 rounded text-black font-semibold"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="bg-emerald-500 px-4 py-2 rounded text-black font-semibold disabled:opacity-50"
           >
-            Submit
+            {loading ? "Submitting..." : "Submit"}
           </button>
         </div>
       </motion.div>

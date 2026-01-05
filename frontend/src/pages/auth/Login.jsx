@@ -55,39 +55,82 @@ const { login } = useAuth();
   /* ---------------- SUBMIT HANDLERS ---------------- */
 
   const handleLogin = async (data) => {
-  setLoading(true);
+  try {
+    setLoading(true);
 
-  setTimeout(() => {
-    // 🔴 MOCK AUTH RESPONSE (MATCHES BACKEND FORMAT)
-    const mockUser = {
-      id: 1,
-      name: "Demo Donor",
-      email: data.email,
-      role: data.email.includes("ngo") ? "ngo" : "donor", // demo logic
-    };
+    const response = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+      }),
+    });
 
-    // ✅ STORE USER IN CONTEXT + LOCALSTORAGE
-    login(mockUser);
+    const result = await response.json();
 
-    setLoading(false);
+    if (!response.ok) {
+      throw new Error(result.message || "Login failed");
+    }
+
+    // ✅ SAVE TOKEN
+    localStorage.setItem("token", result.token);
+
+    // ✅ STORE USER IN CONTEXT
+    login(result.user);
 
     // ✅ ROLE-BASED REDIRECT
-    if (mockUser.role === "donor") {
+    if (result.user.role === "donor") {
       navigate("/donor/dashboard", { replace: true });
-    } else if (mockUser.role === "ngo") {
+    } else if (result.user.role === "ngo") {
       navigate("/ngo/dashboard", { replace: true });
+    } else {
+      navigate("/", { replace: true });
     }
-  }, 1200);
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    setLoading(false);
+  }
 };
 
 
-  const handleRegister = async () => {
+
+  const handleRegister = async (data) => {
+  try {
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      alert("Registered successfully (mock)");
-    }, 1500);
-  };
+
+    const response = await fetch("http://localhost:5000/api/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        role: data.role,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || "Registration failed");
+    }
+
+    alert("Registered successfully! Please login.");
+    setShowRegister(false);
+    registerForm.reset();
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-black text-white">
